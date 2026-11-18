@@ -78,8 +78,8 @@ liquor_cv_fc <- liquor_cv_fit |>
 liquor_cv_fc |>
   accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))
 
-# First Date:
-# Last Date:  
+# First Date: Jan 2002
+# Last Date: Dec 2019
 #### CHECK INSTRUCTIONS
 
 #2.4
@@ -93,6 +93,31 @@ liquor_errs <- liquor_cv_fc |>
 
 forecast::dm.test(liquor_errs$arima, liquor_errs$ets, h = 1, power = 2)
 
-#
+# Test 2: ARIMA vs seasonal random walk
+forecast::dm.test(liquor_errs$arima, liquor_errs$snaive, h = 1, power = 2)
+
+# Test 1 --> DM: -2.9062, p-value: 0.004042
+# Test 2 --> DM: -10.755, p-value< 0.2.2e-16
+
+# Both reject the null hypothesis of equal accuracy, both DM test signs are negative, so ARIMA has a  smallers squared one-step forecast error than ETS 
+# As the liquor store chain, I would use ARIMA. It beat both alternatives on 216 rolling forecast origins, and its advantage over ETS is statistically significant
+
+#3a
+liquor_combo_fc <- liquor_cv_fit |>
+  mutate(combo = (arima + ets) / 2) |>
+  forecast(h = 1)
+
+liquor_combo_fc |>
+  accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE)) |>
+  select(.model, RMSE, MAE) |>
+  arrange(RMSE)
+
+# It looks like combo is in between the arima and the ets. So it improve on the ets, but drags down the arima model.
+
+cor(liquor_errs$arima, liquor_errs$ets)
+
+# We got a correlation of 0.878 which means the ARIMA and ETS forecast errors are very similar.
+#The combination did not beat the ARIMA model, because the ARIMA and ETS forecasts are highly correlated, meaning that if one overforecasts, the other one will as well.
+# The DM test in 2.4 showed that the ETS model was less accurate. Giving ETS half the weight pulls the combination toward the weaker model without adding anything that the ARIMA doesn't have.
 
 
