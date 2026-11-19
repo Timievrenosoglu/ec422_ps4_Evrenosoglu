@@ -120,4 +120,35 @@ cor(liquor_errs$arima, liquor_errs$ets)
 #The combination did not beat the ARIMA model, because the ARIMA and ETS forecasts are highly correlated, meaning that if one overforecasts, the other one will as well.
 # The DM test in 2.4 showed that the ETS model was less accurate. Giving ETS half the weight pulls the combination toward the weaker model without adding anything that the ARIMA doesn't have.
 
+#4.1a
+qd_raw <- read_csv("data/fredqd_2026-09.csv", show_col_types = FALSE) |>
+  slice(-(1:2))
 
+growth <- function(x) 100 * difference(log(x))
+
+qd <- qd_raw |>
+  mutate(date = as.Date(sasdate, "%m/%d/%Y")) |>
+  transmute(date,
+            gdp    = growth(GDPC1),     # real GDP
+            cons   = growth(PCECC96),   # real consumption
+            inv    = growth(GPDIC1),    # real investment
+            emp    = growth(PAYEMS),    # payroll employment
+            infl   = growth(GDPCTPI),   # GDP price index
+            unrate = difference(UNRATE),     # unemployment rate
+            ffr    = difference(FEDFUNDS),   # federal funds rate
+            gs10   = difference(GS10)) |>    # 10-year Treasury yield
+  filter(date >= as.Date("1960-03-01"), date <= as.Date("2019-12-01"))
+
+y <- qd |> select(-date) |> as.matrix()
+
+nrow(y)
+head(y)
+
+# 4.1c
+N <- nrow(y)
+origins <- 120:(N - 1)
+actual <- y[121:N, ]
+
+# We get 120 forecasts, we start with Q1 1990 and end with Q4 2019
+
+#4.2
